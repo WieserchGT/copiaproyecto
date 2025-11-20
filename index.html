@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Temporizador 40s - Cabina Acústica</title>
+  <style>
+    :root{
+      --size: min(80vmin, 520px);
+      --bg: #0f1724;
+      --card: linear-gradient(180deg,#0b1220,#07101a);
+      --glass: rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    .wrap{min-height:100%;display:grid;place-items:center;padding:24px}
+
+    .card{width:var(--size);height:auto;background:var(--card);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.6);padding:20px;margin-top: 20px;}
+
+    .timer-wrap{position:relative;width:80%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center}
+
+    svg{width:100%;height:100%;transform:rotate(-90deg)}
+
+    .center {
+      position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none
+    }
+
+    .time {
+      font-size:clamp(48px,10vmin,128px);
+      line-height:1;color:#e6eef8;font-weight:700;letter-spacing:-2px;text-align:center
+    }
+
+    .label{font-size:14px;color:#9fb3d1;margin-top:6px}
+
+    .controls{margin-top:18px;display:flex;gap:10px}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#cfe6ff;padding:10px 16px;border-radius:10px;font-weight:600;backdrop-filter:blur(6px);cursor:pointer;transition:all 0.2s ease}
+    button:hover{background:rgba(255,255,255,0.1)}
+    button.primary{background:linear-gradient(90deg,#2dd4bf,#60a5fa);color:#042028;border:none}
+    button.primary:hover{background:linear-gradient(90deg,#20c9b3,#4d94f0);transform:translateY(-1px)}
+
+    /* color states */
+    .stroke-green{stroke:#3ee08a}
+    .stroke-orange{stroke:#ffb86b}
+    .stroke-red{stroke:#ff6b6b}
+
+    /* flashing when urgent */
+    .flash{animation:flash 1s linear infinite}
+    @keyframes flash{0%{opacity:1}50%{opacity:0.35}100%{opacity:1}}
+
+    /* footer */
+    .footer{margin-top:20px;color:#7897b6;font-size:12px;text-align:center;line-height:1.4}
+    .developer{color:#2dd4bf;font-weight:600}
+    .project{color:#ffb86b}
+    
+    /* Logo UTEG */
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .uteg-logo {
+      max-width: 200px;
+      height: auto;
+      filter: brightness(0) invert(1);
+    }
+    
+    /* Tabla de integrantes */
+    .integrantes-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .integrantes-title {
+      text-align: center;
+      color: #e6eef8;
+      font-size: 20px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .integrantes-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .integrantes-table th {
+      background: rgba(45, 212, 191, 0.2);
+      color: #2dd4bf;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      border-radius: 8px 8px 0 0;
+    }
+    
+    .integrantes-table td {
+      padding: 12px 15px;
+      color: #cfe6ff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .integrantes-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .integrantes-table tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    /* Copyright */
+    .copyright {
+      text-align: center;
+      margin-top: 30px;
+      color: #9fb3d1;
+      font-size: 14px;
+      padding: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .copyright a {
+      color: #2dd4bf;
+      text-decoration: none;
+    }
+    
+    .copyright a:hover {
+      text-decoration: underline;
+    }
+
+    /* Medidor de decibelios */
+    .decibel-meter-container {
+      width: 100%;
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .decibel-meter-title {
+      text-align: center;
+      color: #e6eef8;
+      font-size: 18px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .decibel-meter {
+      width: 100%;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    
+    .decibel-level {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3ee08a, #ffb86b, #ff6b6b);
+      border-radius: 20px;
+      transition: width 0.1s ease;
+    }
+    
+    .decibel-indicators {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      color: #9fb3d1;
+      font-size: 12px;
+    }
+    
+    .decibel-value {
+      text-align: center;
+      color: #e6eef8;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    
+    .mic-permission {
+      text-align: center;
+      margin-top: 15px;
+    }
+    
+    .mic-permission button {
+      background: linear-gradient(90deg, #2dd4bf, #60a5fa);
+      color: #042028;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .mic-permission button:hover {
+      background: linear-gradient(90deg, #20c9b3, #4d94f0);
+      transform: translateY(-1px);
+    }
+    
+    .mic-status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #9fb3d1;
+    }
+    
+    .mic-status.active {
+      color: #3ee08a;
+    }
+    
+    .mic-status.error {
+      color: #ff6b6b;
+    }
+
+    /* Estadísticas de sonómetro */
+    .stats-container {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      display: none;
+    }
+    
+    .stats-title {
+      text-align: center;
+      color: #e6eef8;
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .stats-table th {
+      background: rgba(45, 212, 191, 0.15);
+      color: #2dd4bf;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .stats-table td {
+      padding: 10px 12px;
+      color: #cfe6ff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 14px;
+    }
+    
+    .stats-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .test-button {
+      text-align: center;
+      margin-top: 15px;
+    }
+    
+    .test-button button {
+      background: linear-gradient(90deg, #ffb86b, #ff6b6b);
+      color: #042028;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .test-button button:hover {
+      background: linear-gradient(90deg, #ffa94d, #ff5252);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width:520px){
+      .card{border-radius:18px;padding:14px}
+      .controls{flex-direction:column;width:100%}
+      button{width:100%}
+      .integrantes-container {
+        padding: 15px;
+      }
+      .integrantes-table th, .integrantes-table td {
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+      .decibel-meter-container {
+        padding: 15px;
+      }
+      .stats-container {
+        padding: 12px;
+      }
+      .stats-table th, .stats-table td {
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7d/UTEG_Logo.png" alt="Logo UTEG" class="uteg-logo">
+  </div>
+  
+  <div class="wrap">
+    <div class="card" role="region" aria-label="Temporizador 40 segundos para cabina acústica">
+      <div class="timer-wrap">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <!-- fondo del aro -->
+          <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" />
+          <!-- progreso (se actualizará por JS) -->
+          <circle id="progress" cx="50" cy="50" r="44" fill="none" stroke="#3ee08a" stroke-width="10" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+        </svg>
+
+        <div class="center">
+          <div id="time" class="time">00:40</div>
+          <div class="label">Temporizador Cabina Acústica</div>
+        </div>
+      </div>
+
+      <div class="controls" role="group" aria-label="Controles del temporizador">
+        <button id="start" class="primary">Iniciar</button>
+        <button id="pause">Pausa</button>
+        <button id="reset">Reset</button>
+      </div>
+
+      <!-- Medidor de decibelios -->
+      <div class="decibel-meter-container">
+        <div class="decibel-meter-title">Medidor de Decibelios</div>
+        <div class="decibel-meter">
+          <div class="decibel-level" id="decibel-level"></div>
+        </div>
+        <div class="decibel-indicators">
+          <span>0 dB</span>
+          <span>50 dB</span>
+          <span>100 dB</span>
+        </div>
+        <div class="decibel-value" id="decibel-value">-- dB</div>
+        <div class="mic-permission">
+          <button id="mic-permission-btn">Activar Micrófono</button>
+          <div class="mic-status" id="mic-status">Micrófono no activado</div>
+        </div>
+        
+        <!-- Botón de Test -->
+        <div class="test-button">
+          <button id="test-btn">Iniciar Test</button>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="stats-container" id="stats-container">
+          <div class="stats-title">Estadísticas de la Prueba</div>
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Métrica</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Máximo detectado</td>
+                <td id="max-db">-- dB</td>
+              </tr>
+              <tr>
+                <td>Mínimo detectado</td>
+                <td id="min-db">-- dB</td>
+              </tr>
+              <tr>
+                <td>Duración de prueba</td>
+                <td id="test-duration">--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>Cambia a naranja (≤20s) y rojo (≤10s) con sonido al finalizar</div>
+        <div>Incluye vibración en dispositivos móviles compatibles</div>
+        <div class="developer">Desarrollador: Cristian Arciniega</div>
+        <div class="project">Hecho para proyecto: Cabina Acústica</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="integrantes-container">
+    <div class="integrantes-title">Integrantes del Proyecto</div>
+    <table class="integrantes-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Daniel Alejandro Reyes Madrigal</td></tr>
+        <tr><td>Alexis Josué Sánchez Saavedra</td></tr>
+        <tr><td>Esteban Ortíz Martínez</td></tr>
+        <tr><td>Frida Xitlali Mesina Aceves</td></tr>
+        <tr><td>Jorge Eduardo Cervantes Márquez</td></tr>
+        <tr><td>Christian Ruiz Trujillo</td></tr>
+        <tr><td>Christian Moisés Fernández Reyes</td></tr>
+        <tr><td>Ian Israel Morales Covarrubias</td></tr>
+        <tr><td>Cristian Fernando Arciniega Nila</td></tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="copyright">
+    &copy; 2025 Cristian Arciniega. Todos los derechos reservados.
+  </div>
+
+  <script>
+    (function(){
+      const TOTAL = 40; // segundos
+      let remaining = TOTAL;
+      let running = false;
+      let rafId = null;
+      let last = null;
+      let testStartTime = null;
+
+      const timeEl = document.getElementById('time');
+      const progress = document.getElementById('progress');
+      const startBtn = document.getElementById('start');
+      const pauseBtn = document.getElementById('pause');
+      const resetBtn = document.getElementById('reset');
+      const testBtn = document.getElementById('test-btn');
+      const statsContainer = document.getElementById('stats-container');
+      const maxDbEl = document.getElementById('max-db');
+      const minDbEl = document.getElementById('min-db');
+      const testDurationEl = document.getElementById('test-duration');
+
+      // Elementos del medidor de decibelios
+      const decibelLevel = document.getElementById('decibel-level');
+      const decibelValue = document.getElementById('decibel-value');
+      const micPermissionBtn = document.getElementById('mic-permission-btn');
+      const micStatus = document.getElementById('mic-status');
+
+      // Variables para el análisis de audio
+      let audioContext = null;
+      let analyser = null;
+      let microphone = null;
+      let javascriptNode = null;
+      let isMicActive = false;
+
+      // Variables para estadísticas
+      let maxDb = 0;
+      let minDb = 100;
+      let isTestRunning = false;
+
+      // Verificar compatibilidad con vibración
+      const supportsVibration = 'vibrate' in navigator;
+
+      // Audio desde archivo local en el repositorio
+      const audio = new Audio("audio/alarma.mp3");
+
+      // círculo: circunferencia = 2πr -> r=44 -> c≈276.46
+      const C = 2 * Math.PI * 44;
+      progress.style.strokeDasharray = C.toFixed(2);
+
+      function formatTime(s){
+        const mm = Math.floor(s/60).toString().padStart(2,'0');
+        const ss = Math.floor(s%60).toString().padStart(2,'0');
+        return mm + ':' + ss;
+      }
+
+      function updateVisuals(){
+        // progress (0 = full, C = empty when rotated -90deg)
+        const pct = Math.max(0, remaining / TOTAL);
+        const dash = C * (1 - pct);
+        progress.style.strokeDashoffset = dash.toFixed(2);
+
+        // color thresholds
+        if (remaining <= 10){
+          progress.classList.remove('stroke-green','stroke-orange');
+          progress.classList.add('stroke-red','flash');
+          timeEl.style.color = '#ff6b6b';
+        } else if (remaining <= 20){
+          progress.classList.remove('stroke-green','stroke-red','flash');
+          progress.classList.add('stroke-orange');
+          timeEl.style.color = '#ffc87c';
+        } else {
+          progress.classList.remove('stroke-orange','stroke-red','flash');
+          progress.classList.add('stroke-green');
+          timeEl.style.color = '#e6eef8';
+        }
+
+        timeEl.textContent = formatTime(Math.ceil(remaining));
+      }
+
+      function triggerVibration() {
+        if (!supportsVibration) {
+          console.log("La vibración no es compatible con este dispositivo");
+          return;
+        }
+        
+        // Patrón de vibración: vibrar por 500ms, pausa 300ms, repetir 3 veces
+        const vibrationPattern = [500, 300, 500, 300, 500];
+        
+        // Activar vibración
+        navigator.vibrate(vibrationPattern);
+      }
+
+      function startTest() {
+        if (!isMicActive) {
+          alert("Por favor, activa el micrófono primero para realizar la prueba.");
+          return;
+        }
+        
+        if (running) {
+          alert("Ya hay una prueba en curso. Reinicia el temporizador para comenzar una nueva prueba.");
+          return;
+        }
+        
+        // Reiniciar estadísticas
+        resetStats();
+        
+        // Iniciar temporizador
+        startBtn.click();
+        
+        // Marcar inicio de prueba
+        isTestRunning = true;
+        testStartTime = Date.now();
+        testBtn.textContent = "Prueba en curso...";
+        testBtn.disabled = true;
+        
+        // Ocultar estadísticas durante la prueba
+        statsContainer.style.display = 'none';
+      }
+
+      function finishTest() {
+        isTestRunning = false;
+        testBtn.textContent = "Iniciar Test";
+        testBtn.disabled = false;
+        
+        // Calcular duración de la prueba
+        const duration = Date.now() - testStartTime;
+        const seconds = Math.floor(duration / 1000);
+        testDurationEl.textContent = `${seconds} segundos`;
+        
+        // Mostrar estadísticas
+        statsContainer.style.display = 'block';
+        maxDbEl.textContent = `${maxDb} dB`;
+        minDbEl.textContent = `${minDb} dB`;
+      }
+
+      function resetStats() {
+        maxDb = 0;
+        minDb = 100;
+        maxDbEl.textContent = "-- dB";
+        minDbEl.textContent = "-- dB";
+        testDurationEl.textContent = "--";
+        statsContainer.style.display = 'none';
+      }
+
+      function updateStats(db) {
+        if (!isTestRunning) return;
+        
+        // Actualizar máximo y mínimo
+        if (db > maxDb) maxDb = db;
+        if (db < minDb) minDb = db;
+      }
+
+      function tick(ts){
+        if (!running) return;
+        if (!last) last = ts;
+        const dt = (ts - last) / 1000;
+        last = ts;
+        remaining -= dt;
+        if (remaining <= 0){
+          remaining = 0;
+          running = false;
+          cancelAnimationFrame(rafId);
+          rafId = null;
+          // ensure final visuals
+          updateVisuals();
+          
+          // Reproducir sonido cuando termine
+          audio.play().catch(e => {
+            console.log('Error reproduciendo audio:', e);
+            // Fallback: generar beep si el audio falla
+            playFallbackBeep();
+          });
+          
+          // Activar vibración en dispositivos móviles compatibles
+          triggerVibration();
+          
+          // Finalizar prueba si estaba en curso
+          if (isTestRunning) {
+            finishTest();
+          }
+          
+          return;
+        }
+        updateVisuals();
+        rafId = requestAnimationFrame(tick);
+      }
+
+      // Fallback beep en caso de que el audio falle
+      function playFallbackBeep() {
+        try {
+          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = context.createOscillator();
+          const gainNode = context.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(context.destination);
+          
+          oscillator.type = 'sine';
+          oscillator.frequency.value = 800;
+          gainNode.gain.value = 0.3;
+          
+          oscillator.start();
+          gainNode.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1);
+          oscillator.stop(context.currentTime + 1);
+        } catch (e) {
+          console.log('No se pudo reproducir sonido:', e);
+        }
+      }
+
+      // Funciones para el medidor de decibelios
+      function activateMicrophone() {
+        if (isMicActive) return;
+        
+        try {
+          // Crear contexto de audio
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 256;
+          
+          // Solicitar acceso al micrófono
+          navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(function(stream) {
+              microphone = audioContext.createMediaStreamSource(stream);
+              microphone.connect(analyser);
+              
+              javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+              analyser.connect(javascriptNode);
+              javascriptNode.connect(audioContext.destination);
+              
+              javascriptNode.onaudioprocess = function() {
+                const array = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(array);
+                
+                // Calcular el nivel de volumen
+                let values = 0;
+                const length = array.length;
+                
+                for (let i = 0; i < length; i++) {
+                  values += array[i];
+                }
+                
+                const average = values / length;
+                
+                // Convertir a decibelios (aproximación)
+                // El rango de valores es de 0 a 255, convertimos a dB
+                // 0 dB = silencio, 100 dB = sonido fuerte
+                const db = Math.round(average * 100 / 255);
+                
+                // Actualizar la interfaz
+                updateDecibelMeter(db);
+                
+                // Actualizar estadísticas si la prueba está en curso
+                updateStats(db);
+              };
+              
+              // Actualizar estado
+              isMicActive = true;
+              micStatus.textContent = "Micrófono activado";
+              micStatus.className = "mic-status active";
+              micPermissionBtn.textContent = "Desactivar Micrófono";
+            })
+            .catch(function(err) {
+              console.error('Error al acceder al micrófono:', err);
+              micStatus.textContent = "Error al acceder al micrófono";
+              micStatus.className = "mic-status error";
+            });
+        } catch (e) {
+          console.error('Error inicializando audio:', e);
+          micStatus.textContent = "Error inicializando audio";
+          micStatus.className = "mic-status error";
+        }
+      }
+      
+      function deactivateMicrophone() {
+        if (!isMicActive) return;
+        
+        if (javascriptNode) {
+          javascriptNode.disconnect();
+          javascriptNode = null;
+        }
+        
+        if (microphone) {
+          microphone.disconnect();
+          microphone = null;
+        }
+        
+        if (analyser) {
+          analyser.disconnect();
+          analyser = null;
+        }
+        
+        if (audioContext) {
+          audioContext.close();
+          audioContext = null;
+        }
+        
+        // Actualizar estado
+        isMicActive = false;
+        micStatus.textContent = "Micrófono desactivado";
+        micStatus.className = "mic-status";
+        micPermissionBtn.textContent = "Activar Micrófono";
+        
+        // Resetear medidor
+        decibelLevel.style.width = "0%";
+        decibelValue.textContent = "-- dB";
+        
+        // Detener prueba si estaba en curso
+        if (isTestRunning) {
+          isTestRunning = false;
+          testBtn.textContent = "Iniciar Test";
+          testBtn.disabled = false;
+        }
+      }
+      
+      function updateDecibelMeter(db) {
+        // Limitar el valor a 100 dB para la visualización
+        const displayDb = Math.min(db, 100);
+        
+        // Actualizar la barra de nivel
+        decibelLevel.style.width = `${displayDb}%`;
+        
+        // Actualizar el valor numérico
+        decibelValue.textContent = `${db} dB`;
+        
+        // Cambiar color según el nivel de decibelios
+        if (db < 30) {
+          decibelLevel.style.background = "linear-gradient(90deg, #3ee08a, #3ee08a)";
+        } else if (db < 70) {
+          decibelLevel.style.background = "linear-gradient(90deg, #3ee08a, #ffb86b)";
+        } else {
+          decibelLevel.style.background = "linear-gradient(90deg, #3ee08a, #ffb86b, #ff6b6b)";
+        }
+      }
+
+      // Event Listeners
+      startBtn.addEventListener('click', ()=>{
+        if (running) return;
+        if (remaining <= 0) remaining = TOTAL;
+        running = true;
+        last = null;
+        rafId = requestAnimationFrame(tick);
+      });
+
+      pauseBtn.addEventListener('click', ()=>{
+        running = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+        last = null;
+      });
+
+      resetBtn.addEventListener('click', ()=>{
+        running = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+        last = null;
+        remaining = TOTAL;
+        updateVisuals();
+        
+        // Reiniciar estadísticas al resetear
+        resetStats();
+        if (isTestRunning) {
+          isTestRunning = false;
+          testBtn.textContent = "Iniciar Test";
+          testBtn.disabled = false;
+        }
+      });
+
+      micPermissionBtn.addEventListener('click', () => {
+        if (isMicActive) {
+          deactivateMicrophone();
+        } else {
+          activateMicrophone();
+        }
+      });
+
+      testBtn.addEventListener('click', startTest);
+
+      // Preload audio para mejor respuesta
+      audio.load();
+
+      // Initialize
+      updateVisuals();
+    })();
+  </script>
+</body>
+</html>
